@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/omept/reposvc/internal/config"
-	"github.com/omept/reposvc/internal/gitrepository"
+	"github.com/omept/reposvc/internal/githubrepository"
 	"github.com/omept/reposvc/internal/healthcheck"
 	"github.com/omept/reposvc/pkg/log"
 	"gorm.io/driver/postgres"
@@ -84,15 +84,10 @@ func buildHandler(logger log.Logger, db *gorm.DB, cfg *config.Config) http.Handl
 
 	healthcheck.RegisterHandlers(router, Version)
 
-	// set up web interface
-	// Serve static files from React build directory
-	fs := http.FileServer(http.Dir("internal/web/build/"))
-	router.Handle("/", fs)
-
 	// Set up API
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
-	gitrepository.RegisterHandlers(subrouter,
-		gitrepository.NewService(gitrepository.NewRepository(db, logger, cfg), logger),
+	githubrepository.RegisterHandlers(subrouter,
+		githubrepository.NewService(githubrepository.NewRepository(db, logger, cfg), logger),
 		logger,
 	)
 
