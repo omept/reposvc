@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/omept/reposvc/internal/config"
+	"github.com/omept/reposvc/internal/gitrepository"
 	"github.com/omept/reposvc/internal/healthcheck"
-	"github.com/omept/reposvc/internal/vehiclecollision"
 	"github.com/omept/reposvc/pkg/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -43,7 +43,7 @@ func main() {
 	// connect to the database
 	dbHost := os.Getenv("DB_HOST")
 	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	dbPort := os.Getenv("DB_PORT")
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName, dbPort)
@@ -63,8 +63,6 @@ func main() {
 		}
 	}()
 
-	// Build file Server
-
 	// Build HTTP server
 	address := fmt.Sprintf(":%v", cfg.ServerPort)
 	hs := http.Server{
@@ -81,19 +79,20 @@ func main() {
 
 // buildHandler sets up the HTTP routing and builds an HTTP handler.
 func buildHandler(logger log.Logger, db *gorm.DB, cfg *config.Config) http.Handler {
+	// func buildHandler() http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	healthcheck.RegisterHandlers(router, Version)
 
 	// set up web interface
 	// Serve static files from React build directory
-	fs := http.FileServer(http.Dir("/web/build"))
-	http.Handle("/", fs)
+	fs := http.FileServer(http.Dir("internal/web/build/"))
+	router.Handle("/", fs)
 
 	// Set up API
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
-	vehiclecollision.RegisterHandlers(subrouter,
-		vehiclecollision.NewService(vehiclecollision.NewRepository(db, logger), logger),
+	gitrepository.RegisterHandlers(subrouter,
+		gitrepository.NewService(gitrepository.NewRepository(db, logger, cfg), logger),
 		logger,
 	)
 
