@@ -2,6 +2,7 @@ package githubrepository
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/omept/reposvc/internal/entities"
@@ -19,6 +20,32 @@ type Service interface {
 // GitRepo represents the data about a Git Repository.
 type GitRepo struct {
 	entities.GitRepo
+}
+type GitHubCommit struct {
+	SHA    string `json:"sha"`
+	Commit struct {
+		Message string `json:"message"`
+		Author  struct {
+			Name  string    `json:"name"`
+			Email string    `json:"email"`
+			Date  time.Time `json:"date"`
+		} `json:"author"`
+	} `json:"commit"`
+	HTMLURL string `json:"html_url"`
+}
+
+type GitHubRepository struct {
+	Name        string    `json:"name"`
+	FullName    string    `json:"full_name"`
+	Description string    `json:"description"`
+	HTMLURL     string    `json:"html_url"`
+	Language    string    `json:"language"`
+	ForksCount  int       `json:"forks_count"`
+	StarsCount  int       `json:"stargazers_count"`
+	OpenIssues  int       `json:"open_issues_count"`
+	Watchers    int       `json:"watchers_count"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // IndexRepoResponse represents the response sent for a request
