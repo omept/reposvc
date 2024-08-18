@@ -2,25 +2,22 @@ package githubrepository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/omept/reposvc/internal/entities"
+	"github.com/omept/reposvc/internal/models"
 	"github.com/omept/reposvc/pkg/log"
 )
 
 // Service encapsulates usecase logic for githubrepository.
 type Service interface {
 	// FetchRepo returns the git repo specified.
-	FetchRepo(ctx context.Context, input FetchRepoRequest) (GitRepo, error)
+	FetchRepo(ctx context.Context, input FetchRepoRequest) (models.Repository, error)
 	// IndexRepo indexes a github repository. i.e it loads and persists the github repo and its commits.
 	IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error)
 }
 
-// GitRepo represents the data about a Git Repository.
-type GitRepo struct {
-	entities.GitRepo
-}
 type GitHubCommit struct {
 	SHA    string `json:"sha"`
 	Commit struct {
@@ -79,34 +76,49 @@ func Validate[T FetchRepoRequest | RepoDetailsRequest](s T) error {
 }
 
 type service struct {
-	repo   Repository
-	logger log.Logger
+	repo      Repository
+	logger    log.Logger
+	repoChan  chan models.Repository
+	reposPool map[string]models.Repository
 }
 
 // NewService creates a new gitrepository service.
 func NewService(repo Repository, logger log.Logger) Service {
-	return service{repo, logger}
+	// Set up in-memmory channel and pool used to monitor added repositories
+	repoChan := make(chan models.Repository, 100)
+	reposPool := make(map[string]models.Repository, 100)
+	go func() {
+		for {
+			select {
+			case newRepo := <-repoChan:
+				reposPool[newRepo.Name] = newRepo
+			}
+		}
+	}()
+
+	return service{repo, logger, repoChan, reposPool}
 }
 
 // FetchRepo returns the git repo specified.
-func (s service) FetchRepo(ctx context.Context, input FetchRepoRequest) (GitRepo, error) {
+func (s service) FetchRepo(ctx context.Context, input FetchRepoRequest) (models.Repository, error) {
 	err := Validate(input)
 	if err != nil {
-		return GitRepo{}, err
+		return models.Repository{}, err
 	}
 
 	gitRepo, err := s.repo.FetchRepo(ctx, input.Owner, input.Repo, input.CommitFilter.Page, input.CommitFilter.PerPage)
 	if err != nil {
-		return GitRepo{}, err
+		return models.Repository{}, err
 	}
-	return GitRepo{gitRepo}, nil
+	return gitRepo, nil
 }
 
 // IndexRepo indexes a github repository. i.e it loads and persists the github repo and its commits.
 func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error) {
-	indexRepoRes, err := s.repo.IndexRepo(ctx, input.Owner, input.Repo)
+	repoRes, err := s.repo.IndexRepo(ctx, input.Owner, input.Repo)
 	if err != nil {
 		return IndexRepoResponse{}, err
 	}
-	return indexRepoRes, nil
+	s.repoChan <- repoRes
+	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.URL)}, nil
 }

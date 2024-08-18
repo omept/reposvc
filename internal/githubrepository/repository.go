@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/omept/reposvc/internal/config"
-	"github.com/omept/reposvc/internal/entities"
 	"github.com/omept/reposvc/internal/models"
 	"github.com/omept/reposvc/pkg/log"
 	"gorm.io/gorm"
@@ -17,9 +16,9 @@ import (
 // Repository encapsulates the logic to access github repositories from the data source.
 type Repository interface {
 	// IndexRepo begins the process of indexing a repository if the repository is valid
-	IndexRepo(ctx context.Context, owner string, repo string) (IndexRepoResponse, error)
+	IndexRepo(ctx context.Context, owner string, repo string) (models.Repository, error)
 	// FetchRepo returns the repository belonging to owner.
-	FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (entities.GitRepo, error)
+	FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (models.Repository, error)
 }
 
 // repository implements the logic for the github repository service
@@ -29,7 +28,7 @@ type repository struct {
 	cfg    *config.Config
 }
 
-// NewRepository creates a new repository
+// NewRepository creates a new repository and loads previous git repositories for monitoring
 func NewRepository(db *gorm.DB, logger log.Logger, cfg *config.Config) Repository {
 	instance := repository{db, logger, cfg}
 	gitrepos := FetchAllRepositories(db)
@@ -57,44 +56,30 @@ func MonitorRepository(r repository, gitrepo models.Repository) {
 
 		r.SaveCommits(commits, gitrepo)
 		time.Sleep(1 * time.Hour)
+		r.logger.Infof("Fetching commits for repository %s", gitrepo.Name)
 	}
 }
 
 // FetchRepo retrieves the repository details from database
-func (r repository) FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (entities.GitRepo, error) {
-	var gitRepo entities.GitRepo = entities.GitRepo{}
+func (r repository) FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (models.Repository, error) {
+	var gitRepo models.Repository = models.Repository{}
 	return gitRepo, nil
 }
 
 // IndexRepo begins the process of indexing a github repository if the repository is valid
-func (r repository) IndexRepo(ctx context.Context, owner string, repo string) (IndexRepoResponse, error) {
-	// fetch repo from github
+func (r repository) IndexRepo(ctx context.Context, owner string, repo string) (models.Repository, error) {
 
-	// fetch commits
+	// cancel if repo already exists locally
+
+	// fetch repo from github and save
+
+	// fetch repo commits
 
 	// save commits
 
 	// monitor commits
 
-	res := IndexRepoResponse{}
-	return res, nil
-}
-
-func (r repository) FetchRepository(repoName string) (GitHubRepository, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s", repoName)
-	resp, err := http.Get(url)
-	if err != nil {
-		return GitHubRepository{}, err
-	}
-	defer resp.Body.Close()
-
-	var repo GitHubRepository
-	err = json.NewDecoder(resp.Body).Decode(&repo)
-	if err != nil {
-		return GitHubRepository{}, err
-	}
-
-	return repo, nil
+	return models.Repository{}, nil
 }
 
 func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Repository, error) {
@@ -120,6 +105,23 @@ func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Reposit
 	err = db.Where(models.Repository{Name: repo.Name}).FirstOrCreate(&repo).Error
 	if err != nil {
 		return models.Repository{}, err
+	}
+
+	return repo, nil
+}
+
+func (r repository) FetchRepository(repoName string) (GitHubRepository, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s", repoName)
+	resp, err := http.Get(url)
+	if err != nil {
+		return GitHubRepository{}, err
+	}
+	defer resp.Body.Close()
+
+	var repo GitHubRepository
+	err = json.NewDecoder(resp.Body).Decode(&repo)
+	if err != nil {
+		return GitHubRepository{}, err
 	}
 
 	return repo, nil
