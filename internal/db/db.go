@@ -23,8 +23,11 @@ func SetupDb(logger log.Logger) *gorm.DB {
 		logger.Errorf("failed setting up db: ", err)
 		os.Exit(-1)
 	}
-	db.AutoMigrate(&models.Commit{}, &models.Repository{})
-
+	err = db.AutoMigrate(&models.Repository{}, &models.Commit{})
+	if err != nil {
+		logger.Errorf("error during auto migrating: ", err)
+		os.Exit(-1)
+	}
 	return db
 }
 

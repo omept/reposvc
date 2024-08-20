@@ -52,14 +52,14 @@ type IndexRepoResponse struct {
 
 // RepoDetailsRequest represents the request structure for getting a Github Repository.
 type RepoDetailsRequest struct {
-	Repo  string `json:"repo"`
-	Owner string `json:"owner"`
+	Repo  string `json:"repo" validate:"required"`
+	Owner string `json:"owner" validate:"required"`
 }
 
 // FetchRepoRequest represents the request structure for fetchin a Github Repository from data store
 type FetchRepoRequest struct {
-	Repo         string `json:"repo"`
-	Owner        string `json:"owner"`
+	Repo         string `json:"repo" validate:"required"`
+	Owner        string `json:"owner" validate:"required"`
 	CommitFilter RepoCommitFilter
 }
 
@@ -115,10 +115,16 @@ func (s service) FetchRepo(ctx context.Context, input FetchRepoRequest) (models.
 
 // IndexRepo indexes a github repository. i.e it loads and persists the github repo and its commits.
 func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error) {
+	repoName := fmt.Sprintf("%s/%s", input.Owner, input.Repo)
+	fmt.Println(repoName)
+	if _, ok := s.reposPool[repoName]; ok {
+		return IndexRepoResponse{Message: fmt.Sprintf("Duplicate request. Indexing of repo %s has been previously requested.", repoName)}, nil
+	}
+
 	repoRes, err := s.repo.IndexRepo(ctx, input.Owner, input.Repo)
 	if err != nil {
 		return IndexRepoResponse{}, err
 	}
 	s.repoChan <- repoRes
-	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.URL)}, nil
+	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.Name)}, nil
 }

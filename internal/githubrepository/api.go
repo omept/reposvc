@@ -45,7 +45,7 @@ func (r resource) IndexRepo(w http.ResponseWriter, req *http.Request) {
 	err := Validate(input)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err}
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err.Error()}
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -90,7 +90,7 @@ func (r resource) FetchRepo(w http.ResponseWriter, req *http.Request) {
 	err := Validate(input)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err}
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err.Error()}
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -99,7 +99,17 @@ func (r resource) FetchRepo(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Fetch error", Error: err}
+		var message string
+		code := uint(http.StatusBadRequest)
+		switch err.Error() {
+		case "record not found":
+			message = err.Error()
+			code = http.StatusOK
+		default:
+			message = "fetch error"
+
+		}
+		res = APIResponse{StatusCode: code, Message: message, Error: err.Error()}
 		json.NewEncoder(w).Encode(res)
 		return
 	}

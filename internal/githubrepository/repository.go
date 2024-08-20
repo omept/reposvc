@@ -62,7 +62,17 @@ func MonitorRepository(r repository, gitrepo models.Repository) {
 
 // FetchRepo retrieves the repository details from database
 func (r repository) FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (models.Repository, error) {
-	var gitRepo models.Repository = models.Repository{}
+	var gitRepo models.Repository
+
+	// Fetch the repository and paginate the commits
+	err := r.db.Preload("Commits", func(db *gorm.DB) *gorm.DB {
+		return db.Order("date desc").Offset((int(page) - 1) * int(perPage)).Limit(int(perPage))
+	}).First(&gitRepo, "name = ?", fmt.Sprintf("%s/%s", owner, repo)).Error
+
+	if err != nil {
+		return gitRepo, err
+	}
+
 	return gitRepo, nil
 }
 
