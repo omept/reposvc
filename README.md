@@ -181,7 +181,7 @@ The request body should be a JSON object with the following structure:
 - **`repo`** (string, required): The name of the repository to fetch.
 - **`owner`** (string, required): The GitHub username or organization name that owns the repository.
 
-### Notes
+#### Notes
 - Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
 
 
@@ -218,7 +218,7 @@ The request body should be a JSON object with the following structure:
   - **`per_page`** (uint16, optional): The number of commits to return per page. Defaults to a standard value if not provided.
   - **`page`** (uint16, optional): The page number to retrieve, useful for paginated results. Defaults to the first page if not provided.
 
-### Notes
+#### Notes
 - Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
 - Use the `commit_filter` for efficient pagination, especially when dealing with repositories with a large number of commits.
 
