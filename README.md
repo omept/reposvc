@@ -62,7 +62,6 @@ Build a service that:
 │   └── *.sql             # Database migration scripts
 │   └── seed_data.go      # Script to seed the database with initial data
 ├── docker-compose.yml    # Docker Compose for multi-container setup
-|── Makefile              # Makefile
 └── README.md             # This file
 ```
 
