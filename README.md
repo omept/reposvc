@@ -44,20 +44,25 @@ Build a service that:
 ```plaintext
 .
 ├── cmd
-│   └── main.go           # Entry point for the service
+│   └── reposvc           # Entry point for the service
+│       |── main.go 
+│       └── Dockerfile   # Dockerfile to containerize the application
+├── config
+│   └── local.yml         # Configuration settings
 ├── internal
-│   ├── github            # GitHub API interaction logic
+│   ├── config            # App configuration logic
+│   ├── healtcheck        # API healthcheck logic
+│   ├── githubrepository  # GitHub API interaction logic
 │   ├── db                # Database models and interactions
 │   ├── service           # Core business logic
 │   └── tests             # Unit tests for core functions
-├── config
-│   └── config.go         # Configuration settings (e.g., API keys, DB connection)
-├── migrations
-│   └── *.sql             # Database migration scripts
+├── pkg
+│   └── log               # Log logic for the application
 ├── scripts
+│   └── *.sql             # Database migration scripts
 │   └── seed_data.go      # Script to seed the database with initial data
-├── Dockerfile            # Dockerfile to containerize the application
 ├── docker-compose.yml    # Docker Compose for multi-container setup
+|── Makefile              # Makefile
 └── README.md             # This file
 ```
 
@@ -74,29 +79,23 @@ Build a service that:
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/yourusername/github-api-fetcher.git
-    cd github-api-fetcher
+    git clone https://github.com/omept/reposvc.git
+    cd reposvc
     ```
 
 2. Set up the environment variables by creating a `.env` file based on `.env.example`.
 
-3. Run the database migrations:
-
-    ```bash
-    go run scripts/migrate.go
-    ```
-
-4. Seed the database (optional):
+3. Seed the database (optional):
 
     ```bash
     go run scripts/seed_data.go
     ```
 
-5. Build and run the service:
+4. Build and run the service:
 
     ```bash
-    go build -o github-api-fetcher ./cmd
-    ./github-api-fetcher
+    go build -o github-repo-indexer ./cmd/reposvc
+    ./github-repo-indexer
     ```
 
 Alternatively, you can use Docker:
@@ -107,7 +106,7 @@ docker-compose up --build
 
 ### Configuration
 
-All configuration settings (e.g., API keys, database connections) are managed through environment variables defined in the `.env` file.
+All configuration settings (e.g. database connections) are managed through environment variables defined in the `.env` file.
 
 ### Usage
 
@@ -119,9 +118,6 @@ All configuration settings (e.g., API keys, database connections) are managed th
 
     The service continuously monitors the repository and updates the database with new commits as they appear on GitHub.
 
-- **Querying data:**
-
-    Example queries include retrieving the top N commit authors and fetching commits by repository name. These can be executed via the provided API or CLI commands.
 
 ### Example Queries
 
@@ -133,14 +129,6 @@ All configuration settings (e.g., API keys, database connections) are managed th
     GROUP BY author_name
     ORDER BY commit_count DESC
     LIMIT N;
-    ```
-
-- **Retrieve commits of a repository by name:**
-
-    ```sql
-    SELECT * 
-    FROM commits 
-    WHERE repository_id = (SELECT id FROM repositories WHERE name = 'your-repo-name');
     ```
 
 ### Unit Tests
@@ -163,6 +151,100 @@ For deployment, the service can be containerized using Docker. Use the provided 
 ### Error Handling
 
 The service includes robust error handling with clear and meaningful error messages. All critical operations are monitored and logged.
+
+
+## API Documentation
+
+### Index A Github Repository
+
+#### Endpoint
+
+**`POST /api/v1/index-github-repository`**
+
+#### Description
+
+Index repository gets repository details and commit history from GitHub based on the specified repository name and owner, then saves it locally. The repository is also monitored for future commits
+
+#### Request Body
+
+The request body should be a JSON object with the following structure:
+
+```json
+{
+  "repo": "string",
+  "owner": "string"
+}
+```
+
+#### Fields
+
+- **`repo`** (string, required): The name of the repository to fetch.
+- **`owner`** (string, required): The GitHub username or organization name that owns the repository.
+
+### Notes
+- Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
+
+
+### Fetch Repository Data
+
+#### Endpoint
+
+**`GET /api/v1/fetch-github-repository`**
+
+#### Description
+
+Fetch repository details and commit history from GitHub based on the specified repository name and owner. The results can be filtered and paginated using the provided parameters. Defualts 10 commits per page.
+
+#### Request Body
+
+The request body should be a JSON object with the following structure:
+
+```json
+{
+  "repo": "string",
+  "owner": "string",
+  "commit_filter": {
+    "per_page": "uint16",
+    "page": "uint16"
+  }
+}
+```
+
+#### Fields
+
+- **`repo`** (string, required): The name of the repository to fetch.
+- **`owner`** (string, required): The GitHub username or organization name that owns the repository.
+- **`commit_filter`** (object, optional): A filter object to paginate the commit history.
+  - **`per_page`** (uint16, optional): The number of commits to return per page. Defaults to a standard value if not provided.
+  - **`page`** (uint16, optional): The page number to retrieve, useful for paginated results. Defaults to the first page if not provided.
+
+### Notes
+- Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
+- Use the `commit_filter` for efficient pagination, especially when dealing with repositories with a large number of commits.
+
+
+## API Response Structure
+
+```json
+{
+  "message": "string response",
+  "status_code": "integer response code, e.g 200, 400 ",
+  "data": "object",
+  "error": "string error message"
+}
+```
+
+
+## Error codes Responses
+
+- **400**:  Bad Request.
+  
+- **404**: Not found.
+
+- **500**: Internal Server Error
+
+
+
 
 ## Contributing
 

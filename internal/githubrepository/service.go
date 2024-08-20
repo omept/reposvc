@@ -116,7 +116,6 @@ func (s service) FetchRepo(ctx context.Context, input FetchRepoRequest) (models.
 // IndexRepo indexes a github repository. i.e it loads and persists the github repo and its commits.
 func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error) {
 	repoName := fmt.Sprintf("%s/%s", input.Owner, input.Repo)
-	fmt.Println(repoName)
 	if _, ok := s.reposPool[repoName]; ok {
 		return IndexRepoResponse{Message: fmt.Sprintf("Duplicate request. Indexing of repo %s has been previously requested.", repoName)}, nil
 	}

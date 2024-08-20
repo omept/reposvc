@@ -2,8 +2,8 @@ package githubrepository
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/omept/reposvc/pkg/log"
@@ -14,7 +14,7 @@ func RegisterHandlers(r *mux.Router, service Service, logger log.Logger) {
 	res := resource{service, logger}
 
 	r.HandleFunc("/index-github-repository", res.IndexRepo).Methods("POST")
-	r.HandleFunc("/fetch-github-repository/{owner}/{repo}", res.FetchRepo).Methods("GET")
+	r.HandleFunc("/fetch-github-repository", res.FetchRepo).Methods("GET")
 	// r.HandleFunc("/git-repository/{owner}/truncate-commits-from/{repo}/{date}", res.truncateCommitsFrom).Methods("PUT")
 }
 
@@ -38,11 +38,20 @@ type APIResponse struct {
 func (r resource) IndexRepo(w http.ResponseWriter, req *http.Request) {
 	var input RepoDetailsRequest
 	var res APIResponse
-	params := mux.Vars(req)
-	input.Owner = params["owner"]
-	input.Repo = params["repo"]
 
-	err := Validate(input)
+	// Decode the JSON request body into the RepoDetailsRequest struct
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Bad request", Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	// Close the body when done to prevent memory leaks
+	defer req.Body.Close()
+
+	fmt.Println(input)
+	err = Validate(input)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err.Error()}
@@ -66,28 +75,21 @@ func (r resource) IndexRepo(w http.ResponseWriter, req *http.Request) {
 func (r resource) FetchRepo(w http.ResponseWriter, req *http.Request) {
 	var input FetchRepoRequest
 	var res APIResponse
-	params := mux.Vars(req)
-	input.Owner = params["owner"]
-	input.Repo = params["repo"]
 
-	// Check filters
-	var page, perPage uint16
-	page = defaultPage
-	if pageStr, ok := params["page"]; ok {
-		if val, err := strconv.ParseUint(pageStr, 10, 16); err == nil {
-			page = uint16(val)
-		}
+	// Decode the JSON request body into the FetchRepoRequest struct
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Bad request", Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
 	}
-	perPage = defaultPerPage
-	if perPageStr, ok := params["per_page"]; ok {
-		if val, err := strconv.ParseUint(perPageStr, 10, 16); err == nil {
-			page = uint16(val)
-		}
-	}
+	// Close the body when done to prevent memory leaks
+	defer req.Body.Close()
 
-	input.CommitFilter = RepoCommitFilter{PerPage: perPage, Page: page}
+	fmt.Println(input)
 
-	err := Validate(input)
+	err = Validate(input)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err.Error()}
