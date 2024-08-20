@@ -2,7 +2,6 @@ package githubrepository
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -49,8 +48,6 @@ func (r resource) IndexRepo(w http.ResponseWriter, req *http.Request) {
 	}
 	// Close the body when done to prevent memory leaks
 	defer req.Body.Close()
-
-	fmt.Println(input)
 	err = Validate(input)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -87,7 +84,18 @@ func (r resource) FetchRepo(w http.ResponseWriter, req *http.Request) {
 	// Close the body when done to prevent memory leaks
 	defer req.Body.Close()
 
-	fmt.Println(input)
+	// Check filters
+	var page, perPage uint16
+	page = defaultPage
+	if pageReq := input.CommitFilter.Page; pageReq > 0 {
+		page = pageReq
+	}
+
+	perPage = defaultPerPage
+	if prePageReq := input.CommitFilter.PerPage; prePageReq > 0 {
+		perPage = prePageReq
+	}
+	input.CommitFilter = RepoCommitFilter{PerPage: perPage, Page: page}
 
 	err = Validate(input)
 	if err != nil {

@@ -49,14 +49,14 @@ func MonitorRepository(r repository, gitrepo models.Repository) {
 	for {
 		commits, err := r.FetchCommits(gitrepo)
 		if err != nil {
-			r.logger.Infof("Error fetching commits for repository %s: %v", gitrepo.Name, err)
+			r.logger.Infof("Error fetching commits for repository %s: %v", gitrepo.FullName, err.Error())
 			time.Sleep(1 * time.Hour)
 			continue
 		}
 
 		r.SaveCommits(commits, gitrepo)
 		time.Sleep(1 * time.Hour)
-		r.logger.Infof("Fetching commits for repository %s", gitrepo.Name)
+		r.logger.Infof("Fetching commits for repository %s", gitrepo.FullName)
 	}
 }
 
@@ -78,20 +78,26 @@ func (r repository) FetchRepo(ctx context.Context, owner string, repo string, pa
 
 // IndexRepo begins the process of indexing a github repository if the repository is valid
 func (r repository) IndexRepo(ctx context.Context, owner string, repo string) (models.Repository, error) {
-
-	// cancel if repo already exists locally
-
 	// fetch repo from github and save
-
-	// fetch repo commits
-
-	// save commits
-
-	// monitor commits
-
-	return models.Repository{}, nil
+	repoName := fmt.Sprintf("%s/%s", owner, repo)
+	repoModel, err := r.SaveRepository(r.db, repoName)
+	if err != nil {
+		return models.Repository{}, err
+	}
+	go func() {
+		// fetch repo commits
+		commits, err := r.FetchCommits(repoModel)
+		if err != nil {
+			r.logger.Infof("error on fetch commits for repo: %s. error: %s", repoModel.Name, err.Error())
+			return
+		}
+		// save commits
+		r.SaveCommits(commits, repoModel)
+	}()
+	return repoModel, nil
 }
 
+// SaveRepository gets and save a repository from github
 func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Repository, error) {
 	ghRepo, err := r.FetchRepository(repoName)
 	if err != nil {
@@ -110,9 +116,10 @@ func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Reposit
 		Watchers:    ghRepo.Watchers,
 		CreatedAt:   ghRepo.CreatedAt,
 		UpdatedAt:   ghRepo.UpdatedAt,
+		LastCommit:  ghRepo.CreatedAt,
 	}
 
-	err = db.Where(models.Repository{Name: repo.Name}).FirstOrCreate(&repo).Error
+	err = db.Where(models.Repository{FullName: repo.FullName}).FirstOrCreate(&repo).Error
 	if err != nil {
 		return models.Repository{}, err
 	}
@@ -120,6 +127,7 @@ func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Reposit
 	return repo, nil
 }
 
+// FetchRepository only gets a repository from github
 func (r repository) FetchRepository(repoName string) (GitHubRepository, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s", repoName)
 	resp, err := http.Get(url)
@@ -137,10 +145,12 @@ func (r repository) FetchRepository(repoName string) (GitHubRepository, error) {
 	return repo, nil
 }
 
+// FetchCommits only gets a repository's commits from github
 func (r repository) FetchCommits(repo models.Repository) ([]GitHubCommit, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/commits?since=%s", repo.Name, repo.LastCommit.Format(time.RFC3339))
+	url := fmt.Sprintf("https://api.github.com/repos/%s/commits?since=%s", repo.FullName, repo.LastCommit.Format(time.RFC3339))
 	resp, err := http.Get(url)
 	if err != nil {
+		r.logger.Infof("Error fetching commits for repository %s: %v", repo.FullName, err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -153,7 +163,15 @@ func (r repository) FetchCommits(repo models.Repository) ([]GitHubCommit, error)
 	return commits, nil
 }
 
+// SaveCommits persists a repository's commits to database
 func (r repository) SaveCommits(commits []GitHubCommit, repo models.Repository) {
+	if len(commits) == 0 {
+		return
+	}
+
+	// Update the date of the latest commit (first in the list)
+	r.updateRepositoryLastCommitDate(&repo, commits[0].Commit.Committer.Date)
+
 	for _, c := range commits {
 		var commit models.Commit
 		r.db.Where(models.Commit{SHA: c.SHA}).FirstOrCreate(&commit, models.Commit{
@@ -171,4 +189,16 @@ func (r repository) SaveCommits(commits []GitHubCommit, repo models.Repository) 
 		}
 	}
 	r.db.Save(&repo)
+}
+
+// updateRepositoryLastCommitDate saves the last commit date of a repository model to the database
+func (r repository) updateRepositoryLastCommitDate(repo *models.Repository, date string) {
+	lastCommitDate, err := time.Parse(time.RFC3339, date)
+	if err != nil {
+		r.logger.Infof("failed to parse last commit date: %v", err.Error())
+	}
+	repo.LastCommit = lastCommitDate
+	if err := r.db.Save(repo).Error; err != nil {
+		r.logger.Infof("failed to update repository: %v", err.Error())
+	}
 }

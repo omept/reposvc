@@ -27,6 +27,9 @@ type GitHubCommit struct {
 			Email string    `json:"email"`
 			Date  time.Time `json:"date"`
 		} `json:"author"`
+		Committer struct {
+			Date string `json:"date"`
+		} `json:"committer"`
 	} `json:"commit"`
 	HTMLURL string `json:"html_url"`
 }
@@ -88,11 +91,8 @@ func NewService(repo Repository, logger log.Logger) Service {
 	repoChan := make(chan models.Repository, 100)
 	reposPool := make(map[string]models.Repository, 100)
 	go func() {
-		for {
-			select {
-			case newRepo := <-repoChan:
-				reposPool[newRepo.Name] = newRepo
-			}
+		for newRepo := range repoChan {
+			reposPool[newRepo.FullName] = newRepo
 		}
 	}()
 
@@ -124,6 +124,7 @@ func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (Index
 	if err != nil {
 		return IndexRepoResponse{}, err
 	}
+
 	s.repoChan <- repoRes
 	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.Name)}, nil
 }

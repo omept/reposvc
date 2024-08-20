@@ -8,8 +8,8 @@ import (
 
 type Repository struct {
 	gorm.Model
-	Name        string `gorm:"index"`
-	FullName    string
+	Name        string
+	FullName    string `gorm:"index"`
 	Description string
 	URL         string
 	Language    string
