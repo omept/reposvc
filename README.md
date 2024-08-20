@@ -54,7 +54,6 @@ Build a service that:
 │   ├── healtcheck        # API healthcheck logic
 │   ├── githubrepository  # GitHub API interaction logic
 │   ├── db                # Database models and interactions
-│   ├── service           # Core business logic
 │   └── tests             # Unit tests for core functions
 ├── pkg
 │   └── log               # Log logic for the application
@@ -130,12 +129,12 @@ All configuration settings (e.g. database connections) are managed through envir
     LIMIT N;
     ```
 
-### Unit Tests
+### Tests
 
 The project includes unit tests for core functionalities, located in the `internal/tests` directory. To run the tests:
 
 ```bash
-go test ./internal/tests/...
+go test ./internal/tests
 ```
 
 ### Deployment

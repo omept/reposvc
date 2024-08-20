@@ -128,5 +128,5 @@ func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (Index
 	}
 
 	s.repoChan <- repoRes
-	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.Name)}, nil
+	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.FullName)}, nil
 }

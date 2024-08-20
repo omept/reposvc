@@ -17,8 +17,10 @@ import (
 type Repository interface {
 	// IndexRepo begins the process of indexing a repository if the repository is valid
 	IndexRepo(ctx context.Context, owner string, repo string) (models.Repository, error)
-	// FetchRepo returns the repository belonging to owner.
+	// FetchRepo returns the repository, from database, belonging to owner.
 	FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (models.Repository, error)
+	// SaveCommits persists a repository's commits to database
+	SaveCommits(commits []GitHubCommit, repo models.Repository)
 }
 
 // repository implements the logic for the github repository service
