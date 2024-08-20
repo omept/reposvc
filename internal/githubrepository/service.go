@@ -18,6 +18,7 @@ type Service interface {
 	IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error)
 }
 
+// Github Repository Commits response
 type GitHubCommit struct {
 	SHA    string `json:"sha"`
 	Commit struct {
@@ -34,6 +35,7 @@ type GitHubCommit struct {
 	HTMLURL string `json:"html_url"`
 }
 
+// Github Repository response
 type GitHubRepository struct {
 	Name        string    `json:"name"`
 	FullName    string    `json:"full_name"`

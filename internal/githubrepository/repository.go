@@ -46,6 +46,7 @@ func FetchAllRepositories(db *gorm.DB) []models.Repository {
 }
 
 func MonitorRepository(r repository, gitrepo models.Repository) {
+	r.logger.Infof("Monitoring commits for repository %s", gitrepo.FullName)
 	for {
 		commits, err := r.FetchCommits(gitrepo)
 		if err != nil {
