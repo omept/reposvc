@@ -8,7 +8,7 @@ import (
 
 type Repository struct {
 	gorm.Model
-	Name        string
+	Name        string `gorm:"index"`
 	FullName    string
 	Description string
 	URL         string
@@ -17,8 +17,8 @@ type Repository struct {
 	StarsCount  int
 	OpenIssues  int
 	Watchers    int
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	LastCommit  time.Time
+	CreatedAt   time.Time `gorm:"index"`
+	UpdatedAt   time.Time `gorm:"index"`
+	LastCommit  time.Time `gorm:"index"`
 	Commits     []Commit
 }

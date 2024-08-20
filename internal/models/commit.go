@@ -11,8 +11,8 @@ type Commit struct {
 	SHA          string `gorm:"uniqueIndex"`
 	Message      string
 	AuthorName   string
-	AuthorEmail  string
-	Date         time.Time
+	AuthorEmail  string    `gorm:"index"`
+	Date         time.Time `gorm:"index"`
 	URL          string
-	RepositoryID uint
+	RepositoryID uint `gorm:"index"`
 }
