@@ -15,7 +15,7 @@ func RegisterHandlers(r *mux.Router, service Service, logger log.Logger) {
 	r.HandleFunc("/index-github-repository", res.IndexRepo).Methods("POST")
 	r.HandleFunc("/fetch-github-repository", res.FetchRepo).Methods("GET")
 	r.HandleFunc("/top-commit-authors", res.TopCommitAuthors).Methods("GET")
-	// r.HandleFunc("/git-repository/{owner}/truncate-commits-from/{repo}/{date}", res.truncateCommitsFrom).Methods("PUT")
+	r.HandleFunc("/truncate-commits-from", res.TruncateCommitsFrom).Methods("DELETE")
 }
 
 type resource struct {
@@ -182,5 +182,44 @@ func (r resource) TopCommitAuthors(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	res = APIResponse{StatusCode: http.StatusOK, Message: "Successful", Data: fetchRes}
+	json.NewEncoder(w).Encode(res)
+}
+
+func (r resource) TruncateCommitsFrom(w http.ResponseWriter, req *http.Request) {
+	var input TruncateCommitsFromRequest
+	var res APIResponse
+
+	// Decode the JSON request body into the TopCommitAuthorsRequest struct
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Bad request", Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	// Close the body when done to prevent memory leaks
+	defer req.Body.Close()
+
+	err = Validate(input)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = r.service.TruncateCommitsFrom(req.Context(), input)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		message := "Failed to truncate saved commits"
+		code := uint(http.StatusBadRequest)
+		res = APIResponse{StatusCode: code, Message: message, Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	res = APIResponse{StatusCode: http.StatusOK, Message: "Successfully truncated"}
 	json.NewEncoder(w).Encode(res)
 }

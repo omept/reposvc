@@ -23,6 +23,8 @@ type Repository interface {
 	SaveCommits(commits []GitHubCommit, repo models.Repository)
 	// TopCommitAuthors return top N commit authors by commit count
 	TopCommitAuthors(ctx context.Context, limit uint16) ([]AuthorsCommitCount, error)
+	// TruncateCommitsFrom deletes commits from a specific date
+	TruncateCommitsFrom(ctx context.Context, owner, repo, date string) error
 }
 
 // repository implements the logic for the github repository service
@@ -85,7 +87,7 @@ func (r repository) FetchRepo(ctx context.Context, owner string, repo string, pa
 func (r repository) IndexRepo(ctx context.Context, owner string, repo string) (models.Repository, error) {
 	// fetch repo from github and save
 	repoName := fmt.Sprintf("%s/%s", owner, repo)
-	repoModel, err := r.SaveRepository(r.db, repoName)
+	repoModel, err := r.SaveRepository(repoName)
 	if err != nil {
 		return models.Repository{}, err
 	}
@@ -103,7 +105,7 @@ func (r repository) IndexRepo(ctx context.Context, owner string, repo string) (m
 }
 
 // SaveRepository gets and save a repository from github
-func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Repository, error) {
+func (r repository) SaveRepository(repoName string) (models.Repository, error) {
 	ghRepo, err := r.FetchRepository(repoName)
 	if err != nil {
 		return models.Repository{}, err
@@ -124,7 +126,7 @@ func (r repository) SaveRepository(db *gorm.DB, repoName string) (models.Reposit
 		LastCommit:  ghRepo.CreatedAt,
 	}
 
-	err = db.Where(models.Repository{FullName: repo.FullName}).FirstOrCreate(&repo).Error
+	err = r.db.Where(models.Repository{FullName: repo.FullName}).FirstOrCreate(&repo).Error
 	if err != nil {
 		return models.Repository{}, err
 	}
@@ -223,4 +225,37 @@ func (r repository) TopCommitAuthors(ctx context.Context, limit uint16) ([]Autho
 	}
 
 	return results, nil
+}
+
+// TruncateCommitsFrom deletes commits from a specific date
+func (r repository) TruncateCommitsFrom(ctx context.Context, owner, repo string, dateStr string) error {
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return err
+	}
+
+	gitRepo, err := r.GetRepositoryByFullName(fmt.Sprintf("%s/%s", owner, repo))
+	if err != nil {
+		return err
+	}
+
+	// Perform the delete operation
+	err = r.db.Unscoped().Where("date > ? AND repository_id = ?", date, gitRepo.ID).Delete(&models.Commit{}).Error
+	if err != nil {
+		return err
+	}
+
+	r.updateRepositoryLastCommitDate(gitRepo, dateStr)
+
+	return nil
+}
+
+func (r repository) GetRepositoryByFullName(fullName string) (*models.Repository, error) {
+	var repo models.Repository
+	// Query the database to find the repository by FullName
+	err := r.db.Where("full_name = ?", fullName).First(&repo).Error
+	if err != nil {
+		return nil, err
+	}
+	return &repo, nil
 }

@@ -68,7 +68,7 @@ Build a service that:
 
 ### Prerequisites
 
-- [Go](https://golang.org/doc/install) (version 1.18+)
+- [Go](https://golang.org/doc/install) (version 1.20+)
 - [PostgreSQL](https://www.postgresql.org/download/)
 - [Docker](https://www.docker.com/products/docker-desktop) (for containerized deployment)
 

@@ -18,6 +18,8 @@ type Service interface {
 	IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error)
 	// TopCommitAuthors return top N commit authors by commit count
 	TopCommitAuthors(ctx context.Context, input TopCommitAuthorsRequest) (TopCommitAuthorsResponse, error)
+	// TruncateCommitsFrom deletes commits from a specific date
+	TruncateCommitsFrom(ctx context.Context, input TruncateCommitsFromRequest) error
 }
 
 // Github Repository Commits response
@@ -80,6 +82,13 @@ type RepoCommitFilter struct {
 type TopCommitAuthorsRequest struct {
 	Limit uint16 `json:"limit"`
 }
+
+// TruncateCommitsFromRequest represents the request structure for deleting commits after a date
+type TruncateCommitsFromRequest struct {
+	RepoDetailsRequest
+	Date string `json:"date"  validate:"required"`
+}
+
 type TopCommitAuthorsResponse = []AuthorsCommitCount
 type AuthorsCommitCount struct {
 	Name         string `json:"name"`
@@ -88,7 +97,7 @@ type AuthorsCommitCount struct {
 }
 
 // Validate validates the RepoDetailsRequest or FetchRepoRequest fields.
-func Validate[T FetchRepoRequest | RepoDetailsRequest | TopCommitAuthorsRequest](s T) error {
+func Validate[T FetchRepoRequest | RepoDetailsRequest | TopCommitAuthorsRequest | TruncateCommitsFromRequest](s T) error {
 	validate := validator.New()
 	return validate.Struct(s)
 }
@@ -146,4 +155,13 @@ func (s service) TopCommitAuthors(ctx context.Context, input TopCommitAuthorsReq
 		return nil, err
 	}
 	return topAuthors, nil
+}
+
+// TruncateCommitsFrom deletes commits from a specific date
+func (s service) TruncateCommitsFrom(ctx context.Context, input TruncateCommitsFromRequest) error {
+	err := s.repo.TruncateCommitsFrom(ctx, input.Owner, input.Repo, input.Date)
+	if err != nil {
+		return err
+	}
+	return nil
 }
