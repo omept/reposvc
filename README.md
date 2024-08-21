@@ -1,51 +1,7 @@
+
 # GitHub API Data Fetching Service
 
 This repository contains a Golang service that interacts with GitHub's public APIs to fetch and store repository information and commit history. The service also includes functionality to monitor repositories for changes and keep the stored data in sync with GitHub.
-
-## Table of Contents
-
-- [GitHub API Data Fetching Service](#github-api-data-fetching-service)
-  - [Table of Contents](#table-of-contents)
-  - [Objective](#objective)
-  - [Features](#features)
-    - [GitHub API Data Fetching](#github-api-data-fetching)
-    - [Repository Metadata Storage](#repository-metadata-storage)
-    - [Data Storage](#data-storage)
-    - [Continuous Monitoring](#continuous-monitoring)
-    - [Querying and Data Retrieval](#querying-and-data-retrieval)
-  - [Project Structure](#project-structure)
-  - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Configuration](#configuration)
-    - [Usage](#usage)
-  - [Tests](#tests)
-  - [Deployment](#deployment)
-  - [Performance Considerations](#performance-considerations)
-  - [Error Handling](#error-handling)
-  - [API Documentation](#api-documentation)
-    - [Index A GitHub Repository](#index-a-github-repository)
-      - [Endpoint](#endpoint)
-      - [Description](#description)
-      - [Request Body](#request-body)
-      - [Fields](#fields)
-      - [Notes](#notes)
-    - [Fetch Repository Data](#fetch-repository-data)
-      - [Endpoint](#endpoint-1)
-      - [Description](#description-1)
-      - [Request Body](#request-body-1)
-      - [Fields](#fields-1)
-      - [Notes](#notes-1)
-    - [Get Top N Commit Authors By Commit Count](#get-top-n-commit-authors-by-commit-count)
-      - [Endpoint](#endpoint-2)
-      - [Description](#description-2)
-      - [Request Body](#request-body-2)
-      - [Fields](#fields-2)
-  - [API Response Structure](#api-response-structure)
-  - [Error Codes Responses](#error-codes-responses)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Resources](#resources)
 
 ## Objective
 
@@ -58,35 +14,30 @@ Build a service that:
 
 ## Features
 
-### GitHub API Data Fetching
+1. **GitHub API Data Fetching**:
+    - Retrieve commits, including commit messages, author details, dates, and URLs.
+    - Store fetched commit data in a database (e.g., PostgreSQL).
+    - Avoid duplicate entries by ensuring that commits in the database mirror those on GitHub.
+    - Allow configuration of a start date to pull commits from a specific point in time.
+    - Implement a mechanism to reset the collection and restart fetching from a specified date.
 
-- Retrieve commits, including commit messages, author details, dates, and URLs.
-- Store fetched commit data in a database (e.g., PostgreSQL).
-- Avoid duplicate entries by ensuring that commits in the database mirror those on GitHub.
-- Allow configuration of a start date to pull commits from a specific point in time.
-- Implement a mechanism to reset the collection and restart fetching from a specified date.
+2. **Repository Metadata Storage**:
+    - Maintain an auxiliary table for repository metadata, including:
+        - Name, description, URL, language
+        - Forks count, stars count, open issues count, watchers count
+        - Created and updated dates
 
-### Repository Metadata Storage
+3. **Data Storage**:
+    - Design and create tables to store repository details and commit data.
+    - Ensure efficient querying and retrieval of data from the database.
 
-- Maintain an auxiliary table for repository metadata, including:
-  - Name, description, URL, language
-  - Forks count, stars count, open issues count, watchers count
-  - Created and updated dates
+4. **Continuous Monitoring**:
+    - Monitor the repository at regular intervals (e.g., every hour) for new commits.
+    - Ensure that only new commits are fetched and stored.
 
-### Data Storage
-
-- Design and create tables to store repository details and commit data.
-- Ensure efficient querying and retrieval of data from the database.
-
-### Continuous Monitoring
-
-- Monitor the repository at regular intervals (e.g., every hour) for new commits.
-- Ensure that only new commits are fetched and stored.
-
-### Querying and Data Retrieval
-
-- Retrieve the top N commit authors by commit counts.
-- Fetch commits by repository name.
+5. **Querying and Data Retrieval**:
+    - Retrieve the top N commit authors by commit counts.
+    - Fetch commits by repository name.
 
 ## Project Structure
 
@@ -165,7 +116,12 @@ All configuration settings (e.g. database connections) are managed through envir
 
     The service continuously monitors the repository and updates the database with new commits as they appear on GitHub.
 
-## Tests
+
+### Requested Query
+
+- ** check API docs section to on how to get the top N commit authors by commit counts from database:**
+
+### Tests
 
 The project includes unit tests for core functionalities, located in the `internal/tests` directory. To run the tests:
 
@@ -173,22 +129,23 @@ The project includes unit tests for core functionalities, located in the `intern
 go test ./internal/tests
 ```
 
-## Deployment
+### Deployment
 
 For deployment, the service can be containerized using Docker. Use the provided `Dockerfile` and `docker-compose.yml` for easy setup.
 
-## Performance Considerations
+### Performance Considerations
 
 - **Efficient data storage**: Indexed fields and optimized queries ensure fast retrieval of commit data.
 - **Scalability**: The service is designed to handle large datasets and can be scaled horizontally with multiple instances.
 
-## Error Handling
+### Error Handling
 
 The service includes robust error handling with clear and meaningful error messages. All critical operations are monitored and logged.
 
+
 ## API Documentation
 
-### Index A GitHub Repository
+### Index A Github Repository
 
 #### Endpoint
 
@@ -215,8 +172,8 @@ The request body should be a JSON object with the following structure:
 - **`owner`** (string, required): The GitHub username or organization name that owns the repository.
 
 #### Notes
-
 - Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
+
 
 ### Fetch Repository Data
 
@@ -226,7 +183,7 @@ The request body should be a JSON object with the following structure:
 
 #### Description
 
-Fetch repository details and commit history from GitHub based on the specified repository name and owner. The results can be filtered and paginated using the provided parameters. Defaults to 10 commits per page.
+Fetch repository details and commit history from GitHub based on the specified repository name and owner. The results can be filtered and paginated using the provided parameters. Defualts 10 commits per page.
 
 #### Request Body
 
@@ -252,9 +209,10 @@ The request body should be a JSON object with the following structure:
   - **`page`** (uint16, optional): The page number to retrieve, useful for paginated results. Defaults to the first page if not provided.
 
 #### Notes
-
 - Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
 - Use the `commit_filter` for efficient pagination, especially when dealing with repositories with a large number of commits.
+
+
 
 ### Get Top N Commit Authors By Commit Count
 
@@ -264,7 +222,7 @@ The request body should be a JSON object with the following structure:
 
 #### Description
 
-Fetch the top committers by commit count. The limit is the max number of rows returned and it defaults to 10.
+Fetch the top commiters by commit count. The limit is the max number or rows returned and it defualts 10.
 
 #### Request Body
 
@@ -272,7 +230,7 @@ The request body should be a JSON object with the following structure:
 
 ```json
 {
-  "limit": "uint16"
+  "limit":   "uint16",
 }
 ```
 
@@ -280,22 +238,63 @@ The request body should be a JSON object with the following structure:
 
 - **`limit`** (uint16, optional): The number of authors to return per page. Defaults to a standard value if not provided.
 
+
+
+### Truncate Commits From A Specific Date 
+
+#### Endpoint
+
+**`GET /api/v1/truncate-commits-from`**
+
+#### Description
+
+Truncates the commits of a repository from a specific date and triggers commit indexing from the date.
+
+#### Request Body
+
+The request body should be a JSON object with the following structure:
+
+```json
+{
+  "repo": "string",
+  "owner": "string",
+  "date":   "date",
+}
+```
+
+#### Fields
+
+- **`date`** (date, required): The date to truncate a repository's commit from. e.g "2024-05-01".
+- **`repo`** (string, required): The name of the repository to fetch.
+- **`owner`** (string, required): The GitHub username or organization name that owns the repository.
+
+
+#### Notes
+- Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
+- Use the `commit_filter` for efficient pagination, especially when dealing with repositories with a large number of commits.
+
 ## API Response Structure
 
 ```json
 {
   "message": "string response",
-  "status_code": "integer response code, e.g 200, 400",
+  "status_code": "integer response code, e.g 200, 400 ",
   "data": "object",
   "error": "string error message"
 }
 ```
 
-## Error Codes Responses
 
-- **400**: Bad Request.
+## Error codes Responses
+
+- **400**:  Bad Request.
+  
 - **404**: Not found.
-- **500**: Internal Server Error.
+
+- **500**: Internal Server Error
+
+
+
 
 ## Contributing
 
@@ -308,3 +307,5 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 ## Resources
 
 - [GitHub REST API Documentation](https://docs.github.com/en/rest)
+
+---
