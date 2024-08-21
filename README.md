@@ -177,7 +177,9 @@ go test ./internal/tests
 ## Deployment
 
 For deployment, the service can be containerized using Docker. Use the provided `Dockerfile` and `docker-compose.yml` for easy setup.
-
+```bash
+docker compose up -d 
+```
 ## Performance Considerations
 
 - **Efficient data storage**: Indexed fields and optimized queries ensure fast retrieval of commit data.
