@@ -213,7 +213,6 @@ The request body should be a JSON object with the following structure:
 - Use the `commit_filter` for efficient pagination, especially when dealing with repositories with a large number of commits.
 
 
-## API Response Structure
 
 ### Get Top N Commit Authors By Commit Count
 
