@@ -29,8 +29,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		logger.Errorf("error loading .env file: %s", err)
-		os.Exit(-1)
+		logger.Errorf("Could not load .env file, relying on environment variables: %s", err)
 	}
 
 	// load application configurations

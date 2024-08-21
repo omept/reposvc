@@ -45,8 +45,7 @@ Build a service that:
 .
 ├── cmd
 │   └── reposvc           # Entry point for the service
-│       |── main.go 
-│       └── Dockerfile   # Dockerfile to containerize the application
+│     └── main.go 
 ├── config
 │   └── local.yml         # Configuration settings
 ├── internal
@@ -61,6 +60,7 @@ Build a service that:
 │   └── *.sql             # Database migration scripts
 │   └── seed_data.go      # Script to seed the database with initial data
 ├── docker-compose.yml    # Docker Compose for multi-container setup
+├── Dockerfile            # Dockerfile to containerize the application 
 └── README.md             # This file
 ```
 
@@ -68,7 +68,7 @@ Build a service that:
 
 ### Prerequisites
 
-- [Go](https://golang.org/doc/install) (version 1.20+)
+- [Go](https://golang.org/doc/install) (version 1.22+)
 - [PostgreSQL](https://www.postgresql.org/download/)
 - [Docker](https://www.docker.com/products/docker-desktop) (for containerized deployment)
 

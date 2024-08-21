@@ -39,6 +39,9 @@ func NewRepository(db *gorm.DB, logger log.Logger, cfg *config.Config) Repositor
 	instance := repository{db, logger, cfg}
 	gitrepos := FetchAllRepositories(db)
 
+	if len(gitrepos) == 0 {
+		logger.Info("No persisted github reposiories. Use API to index a repository")
+	}
 	for _, gitrepo := range gitrepos {
 		go MonitorRepository(instance, gitrepo)
 	}
@@ -74,7 +77,7 @@ func (r repository) FetchRepo(ctx context.Context, owner string, repo string, pa
 	// Fetch the repository and paginate the commits
 	err := r.db.Preload("Commits", func(db *gorm.DB) *gorm.DB {
 		return db.Order("date desc").Offset((int(page) - 1) * int(perPage)).Limit(int(perPage))
-	}).First(&gitRepo, "name = ?", fmt.Sprintf("%s/%s", owner, repo)).Error
+	}).First(&gitRepo, "full_name = ?", fmt.Sprintf("%s/%s", owner, repo)).Error
 
 	if err != nil {
 		return gitRepo, err
@@ -229,7 +232,7 @@ func (r repository) TopCommitAuthors(ctx context.Context, limit uint16) ([]Autho
 
 // TruncateCommitsFrom deletes commits from a specific date
 func (r repository) TruncateCommitsFrom(ctx context.Context, owner, repo string, dateStr string) error {
-	date, err := time.Parse("2006-01-02", dateStr)
+	date, err := time.Parse(time.DateOnly, dateStr)
 	if err != nil {
 		return err
 	}
@@ -239,14 +242,20 @@ func (r repository) TruncateCommitsFrom(ctx context.Context, owner, repo string,
 		return err
 	}
 
+	// Set the time to 11:59:59 PM
+	date = time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, date.Location())
+
 	// Perform the delete operation
 	err = r.db.Unscoped().Where("date > ? AND repository_id = ?", date, gitRepo.ID).Delete(&models.Commit{}).Error
 	if err != nil {
 		return err
 	}
 
-	r.updateRepositoryLastCommitDate(gitRepo, dateStr)
-
+	gitRepo.LastCommit = date
+	if err := r.db.Save(gitRepo).Error; err != nil {
+		r.logger.Infof("failed to update repository LastCommit: %v", err.Error())
+	}
+	r.logger.Infof("Truncated github repository %s and updated LastCommitDate to %s", gitRepo.FullName, date.String())
 	return nil
 }
 

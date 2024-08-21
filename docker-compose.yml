@@ -1,25 +1,24 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  app:
-    image: golang:1.20-alpine
-    container_name: github_indexer
+  reposvc:
     build:
-      context: ./cmd/reposvc
+      context: .
       dockerfile: Dockerfile
     ports:
       - "${SERVER_PORT}:8088"
     environment:
-      - DB_HOST=${DB_HOST}
+      - DB_HOST=postgres_db
       - DB_PORT=${DB_PORT}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+      - SERVER_PORT=${SERVER_PORT}
     volumes:
       - .:/app
     depends_on:
       - postgres
-    command: sh -c "go run main.go"
+    command: ["/main"]
 
   postgres:
     image: postgres:16-alpine
