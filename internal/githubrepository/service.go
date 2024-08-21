@@ -16,6 +16,8 @@ type Service interface {
 	FetchRepo(ctx context.Context, input FetchRepoRequest) (models.Repository, error)
 	// IndexRepo indexes a github repository. i.e it loads and persists the github repo and its commits.
 	IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error)
+	// TopCommitAuthors return top N commit authors by commit count
+	TopCommitAuthors(ctx context.Context, input TopCommitAuthorsRequest) (TopCommitAuthorsResponse, error)
 }
 
 // Github Repository Commits response
@@ -74,8 +76,19 @@ type RepoCommitFilter struct {
 	Page    uint16 `json:"page"`
 }
 
+// TopCommitAuthorsRequest represents the request structure for fetchin top authors by commit count from data store
+type TopCommitAuthorsRequest struct {
+	Limit uint16 `json:"limit"`
+}
+type TopCommitAuthorsResponse = []AuthorsCommitCount
+type AuthorsCommitCount struct {
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	CommitCounts string `json:"commit_counts"`
+}
+
 // Validate validates the RepoDetailsRequest or FetchRepoRequest fields.
-func Validate[T FetchRepoRequest | RepoDetailsRequest](s T) error {
+func Validate[T FetchRepoRequest | RepoDetailsRequest | TopCommitAuthorsRequest](s T) error {
 	validate := validator.New()
 	return validate.Struct(s)
 }
@@ -103,11 +116,6 @@ func NewService(repo Repository, logger log.Logger) Service {
 
 // FetchRepo returns the git repo specified.
 func (s service) FetchRepo(ctx context.Context, input FetchRepoRequest) (models.Repository, error) {
-	err := Validate(input)
-	if err != nil {
-		return models.Repository{}, err
-	}
-
 	gitRepo, err := s.repo.FetchRepo(ctx, input.Owner, input.Repo, input.CommitFilter.Page, input.CommitFilter.PerPage)
 	if err != nil {
 		return models.Repository{}, err
@@ -119,7 +127,7 @@ func (s service) FetchRepo(ctx context.Context, input FetchRepoRequest) (models.
 func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (IndexRepoResponse, error) {
 	repoName := fmt.Sprintf("%s/%s", input.Owner, input.Repo)
 	if _, ok := s.reposPool[repoName]; ok {
-		return IndexRepoResponse{Message: fmt.Sprintf("Duplicate request. Indexing of repo %s has been previously requested.", repoName)}, nil
+		return IndexRepoResponse{Message: fmt.Sprintf("Duplicate request. Indexing of github repository %s has been previously requested.", repoName)}, nil
 	}
 
 	repoRes, err := s.repo.IndexRepo(ctx, input.Owner, input.Repo)
@@ -129,4 +137,13 @@ func (s service) IndexRepo(ctx context.Context, input RepoDetailsRequest) (Index
 
 	s.repoChan <- repoRes
 	return IndexRepoResponse{Message: fmt.Sprintf("successfully indexing repo %s", repoRes.FullName)}, nil
+}
+
+// TopCommitAuthors return top N commit authors by commit count
+func (s service) TopCommitAuthors(ctx context.Context, input TopCommitAuthorsRequest) (TopCommitAuthorsResponse, error) {
+	topAuthors, err := s.repo.TopCommitAuthors(ctx, input.Limit)
+	if err != nil {
+		return nil, err
+	}
+	return topAuthors, nil
 }

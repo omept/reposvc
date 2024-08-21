@@ -21,6 +21,8 @@ type Repository interface {
 	FetchRepo(ctx context.Context, owner string, repo string, page, perPage uint16) (models.Repository, error)
 	// SaveCommits persists a repository's commits to database
 	SaveCommits(commits []GitHubCommit, repo models.Repository)
+	// TopCommitAuthors return top N commit authors by commit count
+	TopCommitAuthors(ctx context.Context, limit uint16) ([]AuthorsCommitCount, error)
 }
 
 // repository implements the logic for the github repository service
@@ -204,4 +206,21 @@ func (r repository) updateRepositoryLastCommitDate(repo *models.Repository, date
 	if err := r.db.Save(repo).Error; err != nil {
 		r.logger.Infof("failed to update repository: %v", err.Error())
 	}
+}
+
+func (r repository) TopCommitAuthors(ctx context.Context, limit uint16) ([]AuthorsCommitCount, error) {
+	var results []AuthorsCommitCount
+
+	err := r.db.Model(&models.Commit{}).
+		Select("author_name AS name, author_email AS email, COUNT(*) AS commit_counts").
+		Group("name, email").
+		Order("commit_counts DESC").
+		Limit(int(limit)).
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

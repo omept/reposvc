@@ -14,6 +14,7 @@ func RegisterHandlers(r *mux.Router, service Service, logger log.Logger) {
 
 	r.HandleFunc("/index-github-repository", res.IndexRepo).Methods("POST")
 	r.HandleFunc("/fetch-github-repository", res.FetchRepo).Methods("GET")
+	r.HandleFunc("/top-commit-authors", res.TopCommitAuthors).Methods("GET")
 	// r.HandleFunc("/git-repository/{owner}/truncate-commits-from/{repo}/{date}", res.truncateCommitsFrom).Methods("PUT")
 }
 
@@ -23,8 +24,9 @@ type resource struct {
 }
 
 const (
-	defaultPage    = 1
-	defaultPerPage = 10
+	defaultPage           = 1
+	defaultPerPage        = 10
+	defaultTopCommitLimit = 10
 )
 
 type APIResponse struct {
@@ -118,6 +120,60 @@ func (r resource) FetchRepo(w http.ResponseWriter, req *http.Request) {
 		default:
 			message = "fetch error"
 
+		}
+		res = APIResponse{StatusCode: code, Message: message, Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	res = APIResponse{StatusCode: http.StatusOK, Message: "Successful", Data: fetchRes}
+	json.NewEncoder(w).Encode(res)
+}
+
+func (r resource) TopCommitAuthors(w http.ResponseWriter, req *http.Request) {
+	var input TopCommitAuthorsRequest
+	var res APIResponse
+
+	// Decode the JSON request body into the TopCommitAuthorsRequest struct
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Bad request", Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	// Close the body when done to prevent memory leaks
+	defer req.Body.Close()
+
+	// Check filters
+	var limit uint16
+	limit = defaultTopCommitLimit
+	if limitReq := input.Limit; limitReq > 0 {
+		limit = limitReq
+	}
+	input.Limit = limit
+
+	err = Validate(input)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		res = APIResponse{StatusCode: http.StatusBadRequest, Message: "Validation error", Error: err.Error()}
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	fetchRes, err := r.service.TopCommitAuthors(req.Context(), input)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		var message string
+		code := uint(http.StatusBadRequest)
+		switch err.Error() {
+		case "record not found":
+			message = err.Error()
+			code = http.StatusOK
+		default:
+			message = "fetch error"
 		}
 		res = APIResponse{StatusCode: code, Message: message, Error: err.Error()}
 		json.NewEncoder(w).Encode(res)

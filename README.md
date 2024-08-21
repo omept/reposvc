@@ -117,17 +117,9 @@ All configuration settings (e.g. database connections) are managed through envir
     The service continuously monitors the repository and updates the database with new commits as they appear on GitHub.
 
 
-### Example Queries
+### Requested Query
 
-- **Get the top N commit authors by commit counts:**
-
-    ```sql
-    SELECT author_name, COUNT(*) AS commit_count
-    FROM commits
-    GROUP BY author_name
-    ORDER BY commit_count DESC
-    LIMIT N;
-    ```
+- ** check API docs section to on how to get the top N commit authors by commit counts from database:**
 
 ### Tests
 
@@ -219,6 +211,33 @@ The request body should be a JSON object with the following structure:
 #### Notes
 - Ensure that the `repo` and `owner` fields are correctly specified as required to avoid validation errors.
 - Use the `commit_filter` for efficient pagination, especially when dealing with repositories with a large number of commits.
+
+
+## API Response Structure
+
+### Get Top N Commit Authors By Commit Count
+
+#### Endpoint
+
+**`GET /api/v1/top-commit-authors`**
+
+#### Description
+
+Fetch the top commiters by commit count. The limit is the max number or rows returned and it defualts 10.
+
+#### Request Body
+
+The request body should be a JSON object with the following structure:
+
+```json
+{
+  "limit":   "uint16",
+}
+```
+
+#### Fields
+
+- **`limit`** (uint16, optional): The number of authors to return per page. Defaults to a standard value if not provided.
 
 
 ## API Response Structure
