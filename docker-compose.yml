@@ -9,7 +9,7 @@ services:
       - "8088:8088"
     environment:
       - DB_HOST=postgres_db
-      - DB_PORT=5442
+      - DB_PORT=5432
       - DB_USER=omept
       - DB_PASSWORD=mypassword
       - DB_NAME=reposvc_db
@@ -30,7 +30,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5442:5442"
+      - "5432:5432"
 
 volumes:
   postgres_data:
