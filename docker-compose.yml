@@ -1,5 +1,6 @@
 services:
   reposvc:
+    container_name: go_reposvc
     build:
       context: .
       dockerfile: Dockerfile
@@ -28,7 +29,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5442:5432"
 
 volumes:
   postgres_data:
