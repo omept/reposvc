@@ -12,10 +12,6 @@ This repository contains a Golang service that interacts with GitHub's public AP
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
-    - [Configuration](#configuration)
-    - [Usage](#usage)
-    - [Requested Query](#requested-query)
-  - [Tests](#tests)
   - [Deployment](#deployment)
   - [Performance Considerations](#performance-considerations)
   - [Error Handling](#error-handling)
@@ -120,33 +116,54 @@ Build a service that:
 
 ### Installation
 
+
+
 1. Clone the repository:
 
     ```bash
     git clone https://github.com/omept/reposvc.git
+
     cd reposvc
     ```
+2. Get go dependencies:
 
-2. Set up the environment variables by creating a `.env` file based on `.env.example`.
+    ```bash
+    go mod tidy
+    ```
 
-3. Seed the database (optional):
+
+3. Set up the environment variables by creating a `.env` file based on `.env.example` and get go dependencies.
+
+
+   ```bash
+    cp .env.example .env
+    ```
+
+4. Run with docker:
+
+    ```bash
+    docker compose up --build
+    ```
+   
+    
+  Alternatively, continue the steps below to build the aplication manually
+
+1.  Update the .env credentials to match your machine. Postgres is the database used in the application.
+ 
+2. Seed the database (optional):
 
     ```bash
     go run scripts/seed_data.go
     ```
 
-4. Build and run the service:
+3. Build and run the service:
 
     ```bash
     go build -o github-repo-indexer ./cmd/reposvc
     ./github-repo-indexer
     ```
 
-Alternatively, you can use Docker:
 
-```bash
-docker-compose up --build
-```
 
 ### Configuration
 

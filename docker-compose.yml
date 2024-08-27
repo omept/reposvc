@@ -9,7 +9,7 @@ services:
       - "${SERVER_PORT}:8088"
     environment:
       - DB_HOST=postgres_db
-      - DB_PORT=${DB_PORT}
+      - DB_PORT=5442
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
@@ -30,7 +30,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${DB_PORT}:5432"
+      - "5442:5442"
 
 volumes:
   postgres_data:
