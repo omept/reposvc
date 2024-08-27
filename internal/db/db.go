@@ -20,7 +20,7 @@ func SetupDb(logger log.Logger) *gorm.DB {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", dbHost, dbUser, dbPassword, dbName, dbPort)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		logger.Errorf("failed setting up db: ", err)
+		logger.Errorf("failed setting up db: %s connection string: %s", err.Error(), dsn)
 		os.Exit(-1)
 	}
 	err = db.AutoMigrate(&models.Repository{}, &models.Commit{})
