@@ -11,7 +11,7 @@ services:
       - DB_HOST=postgres_db
       - DB_PORT=5432
       - DB_USER=omept
-      - DB_PASSWORD=mypassword
+      - DB_PASSWORD=password
       - DB_NAME=reposvc_db
       - SERVER_PORT=8088
     volumes:
@@ -25,7 +25,7 @@ services:
     container_name: postgres_db
     environment:
       POSTGRES_USER: omept
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: reposvc_db
     volumes:
       - postgres_data:/var/lib/postgresql/data

@@ -128,7 +128,7 @@ Build a service that:
       cd reposvc
       ```
   
-  2. Run with docker:
+  2. Run with Docker if you have it installed:
 
       ```bash
       docker compose up --build -d
