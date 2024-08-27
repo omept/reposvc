@@ -117,7 +117,6 @@ Build a service that:
 ### Installation
 
 
-
 1. Clone the repository:
 
     ```bash
@@ -162,7 +161,6 @@ Build a service that:
     go build -o github-repo-indexer ./cmd/reposvc
     ./github-repo-indexer
     ```
-
 
 
 ### Configuration
