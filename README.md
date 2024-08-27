@@ -144,7 +144,7 @@ Build a service that:
   4. Run with docker:
 
       ```bash
-      docker compose up --build
+      docker compose up --build -d
       ```
      
       
