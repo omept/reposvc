@@ -127,38 +127,39 @@ Build a service that:
 
       cd reposvc
       ```
-  2. Get go dependencies:
+  
+  2. Run with docker:
+
+      ```bash
+      docker compose up --build -d
+      ```
+      
+    Alternatively, continue the steps below to build the aplication manually
+    
+  3. Get go dependencies:
 
       ```bash
       go mod tidy
       ```
 
-
-  3. Set up the environment variables by creating a `.env` file based on `.env.example` and get go dependencies.
+  4. Set up the environment variables by creating a `.env` file based on `.env.example` and get go dependencies.
 
 
      ```bash
       cp .env.example .env
       ```
 
-  4. Run with docker:
+ 
 
-      ```bash
-      docker compose up --build -d
-      ```
-     
-      
-    Alternatively, continue the steps below to build the aplication manually
-
-  1.  Update the .env credentials to match your machine. Postgres is the database used in the application.
+  5.  Update the .env credentials to match your machine. Postgres is the database used in the application.
    
-  2. Seed the database (optional):
+  6. Seed the database (optional):
 
       ```bash
       go run scripts/seed_data.go
       ```
 
-  3. Build and run the service:
+  7. Build and run the service:
 
       ```bash
       go build -o github-repo-indexer ./cmd/reposvc

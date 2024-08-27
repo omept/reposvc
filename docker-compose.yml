@@ -6,14 +6,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${SERVER_PORT}:8088"
+      - "8088:8088"
     environment:
       - DB_HOST=postgres_db
       - DB_PORT=5442
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - SERVER_PORT=${SERVER_PORT}
+      - DB_USER=omept
+      - DB_PASSWORD=mypassword
+      - DB_NAME=reposvc_db
+      - SERVER_PORT=8088
     volumes:
       - .:/app
     depends_on:
@@ -24,9 +24,9 @@ services:
     image: postgres:16-alpine
     container_name: postgres_db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: omept
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: reposvc_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
