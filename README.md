@@ -6,8 +6,6 @@ This repository contains a Golang service that interacts with GitHub's public AP
  
 - [GitHub API Data Fetching Service](#github-api-data-fetching-service)
   - [Table of Contents](#table-of-contents)
-  - [Objective](#objective)
-  - [Features](#features)
   - [Project Structure](#project-structure)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
@@ -48,42 +46,6 @@ This repository contains a Golang service that interacts with GitHub's public AP
   - [Contributing](#contributing)
   - [License](#license)
   - [Resources](#resources)
-
-## Objective
-
-Build a service that:
-
-- Fetches repository and commit data from GitHub.
-- Stores the data in a persistent database.
-- Continuously monitors the repository for changes and updates the stored data.
-- Provides efficient querying mechanisms to retrieve and analyze the stored data.
-
-## Features
-
-1. **GitHub API Data Fetching**:
-    - Retrieve commits, including commit messages, author details, dates, and URLs.
-    - Store fetched commit data in a database (e.g., PostgreSQL).
-    - Avoid duplicate entries by ensuring that commits in the database mirror those on GitHub.
-    - Allow configuration of a start date to pull commits from a specific point in time.
-    - Implement a mechanism to reset the collection and restart fetching from a specified date.
-
-2. **Repository Metadata Storage**:
-    - Maintain an auxiliary table for repository metadata, including:
-        - Name, description, URL, language
-        - Forks count, stars count, open issues count, watchers count
-        - Created and updated dates
-
-3. **Data Storage**:
-    - Design and create tables to store repository details and commit data.
-    - Ensure efficient querying and retrieval of data from the database.
-
-4. **Continuous Monitoring**:
-    - Monitor the repository at regular intervals (e.g., every hour) for new commits.
-    - Ensure that only new commits are fetched and stored.
-
-5. **Querying and Data Retrieval**:
-    - Retrieve the top N commit authors by commit counts.
-    - Fetch commits by repository name.
 
 ## Project Structure
 
